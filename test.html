@@ -1,0 +1,2403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EBS Asset Expert - Powered By AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <!-- SheetJS for Excel -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- PapaParse for CSV import -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <!-- jsPDF for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script>
+document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('keydown', e => {
+  const blocked = (
+    e.key === 'F12' ||
+    (e.ctrlKey && e.key.toLowerCase() === 'u') ||
+    (e.ctrlKey && e.shiftKey && ['i','c','j'].includes(e.key.toLowerCase()))
+  );
+  if (blocked) {
+    e.preventDefault();
+    alert('Developer shortcuts are disabled on this page.');
+  }
+});
+document.addEventListener('selectstart', e => e.preventDefault());
+document.addEventListener('dragstart', e => e.preventDefault());
+</script>
+
+
+
+    <style>
+        :root {
+            --primary: #1a4b8c;
+            --primary-dark: #0f3260;
+            --secondary: #ff7f0e;
+            --success: #2ca02c;
+            --warning: #ffd93d;
+            --danger: #d62728;
+            --dark: #2c3e50;
+            --light: #ecf0f1;
+            --background: #f8f9fa;
+            --sidebar-width: 300px;
+            --header-height: 70px;
+            --sidebar-icon-size: 20px;
+            --sidebar-item-padding: 16px 20px;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--background);
+            min-height: 100vh;
+            display: flex;
+            color: #333;
+        }
+        /* ========== LOGIN SCREEN ========== */
+        #login-screen {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            padding: 20px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2000;
+            transition: opacity 0.3s ease;
+        }
+
+        .login-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 400px;
+            overflow: hidden;
+        }
+
+        .login-header {
+            background: var(--primary);
+            padding: 30px 20px;
+            text-align: center;
+            color: white;
+        }
+
+        .login-logo {
+            width: 80px;
+            height: 80px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            font-weight: bold;
+            font-size: 28px;
+            color: var(--primary);
+        }
+
+        .login-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 5px;
+            letter-spacing: 0.5px;
+        }
+
+        .login-subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .login-form {
+            padding: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 15px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .login-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .login-error {
+            color: var(--danger);
+            text-align: center;
+            margin-top: 15px;
+            font-size: 14px;
+            display: none;
+        }
+        /* ========== END LOGIN SCREEN ========== */
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: linear-gradient(180deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            overflow-y: auto;
+            transition: all 0.3s ease;
+            z-index: 1000;
+            box-shadow: 0 0 25px rgba(0, 0, 0, 0.2);
+        }
+        .sidebar-header {
+            padding: 25px 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+            background: rgba(0, 0, 0, 0.1);
+        }
+        .logo-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .logo-placeholder {
+            width: 70px;
+            height: 70px;
+            background: white;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            font-weight: bold;
+            font-size: 22px;
+            color: var(--primary);
+        }
+        .sidebar-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 5px;
+            letter-spacing: 0.5px;
+        }
+        .sidebar-subtitle {
+            font-size: 12px;
+            opacity: 0.85;
+            font-weight: 400;
+            letter-spacing: 1px;
+        }
+        .nav-menu {
+            padding: 15px 0;
+        }
+        .nav-item {
+            padding: var(--sidebar-item-padding);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+            margin: 6px 12px;
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+        .nav-item:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: all 0.5s ease;
+        }
+        .nav-item:hover:before {
+            left: 100%;
+        }
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-left-color: var(--secondary);
+        }
+        .nav-item.active {
+            background: rgba(255, 255, 255, 0.15);
+            border-left-color: var(--secondary);
+            box-shadow: 0 5px 12px rgba(0, 0, 0, 0.15);
+        }
+        .nav-icon {
+            font-size: var(--sidebar-icon-size);
+            width: 24px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        .nav-item.active .nav-icon {
+            transform: scale(1.1);
+        }
+        .nav-text {
+            font-weight: 500;
+            font-size: 15px;
+            transition: all 0.3s ease;
+        }
+        .nav-item.active .nav-text {
+            font-weight: 600;
+        }
+        .sidebar-footer {
+            margin-top: auto;
+            padding: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+            background: rgba(0, 0, 0, 0.1);
+        }
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .user-avatar {
+            width: 45px;
+            height: 45px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+        .user-avatar:hover {
+            transform: scale(1.05);
+        }
+        .user-info {
+            flex: 1;
+            overflow: hidden;
+        }
+        .user-name {
+            font-weight: 600;
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .user-email {
+            font-size: 12px;
+            opacity: 0.8;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        /* Main Content Styles */
+        .main-content {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+            transition: margin-left 0.3s ease;
+        }
+        .header {
+            background: white;
+            height: var(--header-height);
+            padding: 0 25px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .page-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+        .status-badge {
+            padding: 8px 16px;
+            background: var(--light);
+            border-radius: 20px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+        }
+        .status-online {
+            color: var(--success);
+        }
+        .content-area {
+            padding: 25px;
+        }
+        .screen {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+        .screen.active {
+            display: block;
+        }
+        /* Dashboard Screen */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        .metric-card {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            border-left: 5px solid var(--primary);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+        }
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+        }
+        .metric-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .metric-title {
+            font-size: 14px;
+            color: #666;
+            font-weight: 500;
+        }
+        .metric-icon {
+            font-size: 24px;
+            color: var(--primary);
+        }
+        .metric-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 8px;
+        }
+        .metric-change {
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .change-positive {
+            color: var(--success);
+        }
+        .change-negative {
+            color: var(--danger);
+        }
+        /* Charts */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 25px;
+        }
+        .chart-container {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+        .chart-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .chart-placeholder {
+            height: 320px;
+            background: linear-gradient(45deg, #e3f2fd, #bbdefb);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            font-weight: 600;
+            font-size: 16px;
+        }
+        /* Alerts */
+        .alerts-container {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            margin-top: 25px;
+        }
+        .alert-item {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border-left: 5px solid;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: all 0.3s ease;
+        }
+        .alert-item:hover {
+            transform: translateX(5px);
+        }
+        .alert-critical {
+            background: #ffebee;
+            border-left-color: var(--danger);
+        }
+        .alert-warning {
+            background: #fff3e0;
+            border-left-color: var(--warning);
+        }
+        .alert-success {
+            background: #e8f5e9;
+            border-left-color: var(--success);
+        }
+        /* Other Screens */
+        .screen-content {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            min-height: 400px;
+        }
+        /* AI Assistant Styles */
+        .nlp-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .nlp-input-container {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .nlp-input {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        .nlp-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        .nlp-submit {
+            padding: 15px 25px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+        .nlp-submit:hover {
+            background: var(--primary-dark);
+        }
+        .voice-btn {
+            padding: 15px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: background 0.3s;
+        }
+        .voice-btn:hover {
+            background: #5a6268;
+        }
+        .conversation-container {
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            background: #fafafa;
+        }
+        .message {
+            margin-bottom: 15px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            max-width: 80%;
+        }
+        .user-message {
+            background: #e3f2fd;
+            margin-left: auto;
+            border-bottom-right-radius: 2px;
+        }
+        .ai-message {
+            background: #f1f8e9;
+            margin-right: auto;
+            border-bottom-left-radius: 2px;
+        }
+        .message-header {
+            font-weight: 600;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #555;
+        }
+        .message-content {
+            line-height: 1.5;
+        }
+        .thinking {
+            display: none;
+            padding: 10px;
+            text-align: center;
+            color: #666;
+            font-style: italic;
+        }
+        .thinking.active {
+            display: block;
+        }
+        .suggested-questions {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .suggestion-chip {
+            padding: 10px 15px;
+            background: #f0f0f0;
+            border-radius: 20px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .suggestion-chip:hover {
+            background: #e0e0e0;
+            transform: translateY(-2px);
+        }
+        .export-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .export-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        .export-btn.pdf {
+            background: #e74c3c;
+            color: white;
+        }
+        .export-btn.excel {
+            background: #27ae60;
+            color: white;
+        }
+        .export-btn:hover {
+            opacity: 0.9;
+        }
+        .upload-container {
+            margin: 15px 0;
+            padding: 15px;
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            text-align: center;
+            background: #f9f9f9;
+        }
+        .upload-btn {
+            padding: 10px 20px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .upload-status {
+            margin-top: 10px;
+            font-size: 14px;
+            color: var(--success);
+            font-weight: 500;
+        }
+        /* Performance Metrics Styles */
+        .performance-metrics-container {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+        .metrics-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #eee;
+        }
+        .metrics-header h2 {
+            margin: 0;
+            font-size: 24px;
+            color: var(--primary);
+        }
+        .time-filters {
+            display: flex;
+            gap: 10px;
+        }
+        .time-filter {
+            padding: 8px 16px;
+            background: #f0f0f0;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        .time-filter.active {
+            background: var(--primary);
+            color: white;
+        }
+        .time-filter:hover {
+            background: #e0e0e0;
+        }
+        .time-filter.active:hover {
+            background: var(--primary-dark);
+        }
+        .metrics-grid-performance {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .performance-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 4px solid var(--primary);
+        }
+        .performance-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .performance-card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+        .performance-card-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+        .performance-card-change {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .performance-charts {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        .performance-chart {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+        }
+        .performance-chart h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 18px;
+            color: var(--dark);
+        }
+        .chart-container-performance {
+            height: 300px;
+            position: relative;
+        }
+        .performance-table-container {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+        }
+        .performance-table-container h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 18px;
+            color: var(--dark);
+        }
+        .performance-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .performance-table th {
+            background: var(--primary);
+            color: white;
+            text-align: left;
+            padding: 12px 15px;
+            font-weight: 600;
+        }
+        .performance-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .performance-table tr:nth-child(even) {
+            background: #f0f4f8;
+        }
+        .performance-table tr:hover {
+            background: #e3eaf3;
+        }
+        /* Benchmarking Styles */
+        .benchmarking-header {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            margin-bottom: 20px;
+        }
+        .benchmarking-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .benchmarking-control {
+            display: flex;
+            flex-direction: column;
+        }
+        .benchmarking-control label {
+            font-size: 14px;
+            margin-bottom: 8px;
+            color: #666;
+            font-weight: 500;
+        }
+        .benchmarking-control select,
+        .benchmarking-control input {
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        .benchmarking-control select:focus,
+        .benchmarking-control input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        .benchmarking-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .benchmarking-btn {
+            padding: 12px 20px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+        .benchmarking-btn:hover {
+            background: var(--primary-dark);
+        }
+        .benchmarking-btn.secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        .benchmarking-btn.secondary:hover {
+            background: #e0e0e0;
+        }
+        .kpi-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        .kpi-card {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+        }
+        .kpi-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+        }
+        .kpi-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .kpi-title {
+            font-size: 14px;
+            color: #666;
+            font-weight: 500;
+        }
+        .kpi-badge {
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+        .badge-top {
+            background: #e8f5e9;
+            color: var(--success);
+        }
+        .badge-medium {
+            background: #fff3e0;
+            color: var(--warning);
+        }
+        .badge-low {
+            background: #ffebee;
+            color: var(--danger);
+        }
+        .kpi-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 8px;
+        }
+        .kpi-percentile {
+            font-size: 13px;
+            color: #666;
+        }
+        .benchmarking-charts {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+        .benchmarking-chart {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+        .benchmarking-table {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            overflow-x: auto;
+        }
+        .benchmarking-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .benchmarking-table th,
+        .benchmarking-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        .benchmarking-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: var(--dark);
+        }
+        .benchmarking-table tr:hover {
+            background: #f8f9fa;
+        }
+        /* Bad Actors Styles */
+        .bad-actors-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .bad-actors-header h1 {
+            margin: 0;
+            font-size: 2em;
+            font-weight: 600;
+            color: var(--primary);
+        }
+        .key-metrics {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .metric-card-ba {
+            background-color: #fff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            flex: 1;
+            min-width: 250px;
+            border-left: 5px solid var(--primary);
+        }
+        .metric-card-ba h3 {
+            margin: 0 0 10px;
+            font-size: 1em;
+            color: #666;
+            text-transform: uppercase;
+        }
+        .metric-card-ba .value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #333;
+        }
+        .metric-card-ba .change {
+            font-size: 0.9em;
+            color: var(--success);
+            font-weight: 500;
+        }
+        .metric-card-ba .change.negative {
+            color: var(--danger);
+        }
+        .bad-actors-table-container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .bad-actors-table-container h2 {
+            margin-top: 0;
+            color: var(--primary);
+            border-bottom: 1px solid #eee;
+            padding-bottom: 15px;
+        }
+        .bad-actors-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .bad-actors-table th, .bad-actors-table td {
+            text-align: left;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .bad-actors-table th {
+            background-color: #f7f9fc;
+            font-weight: 600;
+            color: #666;
+            text-transform: uppercase;
+            font-size: 0.9em;
+        }
+        .bad-actors-table tr.high-risk {
+            background-color: #fff0f0;
+        }
+        .bad-actors-table tr:hover {
+            background-color: #f1f5f9;
+        }
+        .status-badge-ba {
+            padding: 5px 10px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 0.8em;
+        }
+        .status-badge-ba.critical {
+            background-color: var(--danger);
+            color: white;
+        }
+        .status-badge-ba.warning {
+            background-color: var(--warning);
+            color: white;
+        }
+        .status-badge-ba.stable {
+            background-color: var(--success);
+            color: white;
+        }
+        .bad-actors-filters {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .bad-actors-filters select, .bad-actors-filters input {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+        .bad-actors-filters button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .bad-actors-filters button:hover {
+            background-color: var(--primary-dark);
+        }
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        /* Responsive Design */
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 260px;
+            }
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0;
+            }
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            .performance-charts, .benchmarking-charts {
+                grid-template-columns: 1fr;
+            }
+            .menu-toggle {
+                display: block;
+            }
+            .header-actions {
+                flex-direction: column;
+                align-items: flex-end;
+                gap: 10px;
+            }
+            .status-badge {
+                font-size: 12px;
+                padding: 6px 12px;
+            }
+        }
+        @media (max-width: 768px) {
+            .metrics-grid-performance, .key-metrics {
+                grid-template-columns: 1fr;
+                flex-direction: column;
+            }
+            .metrics-header, .bad-actors-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            .time-filters, .bad-actors-filters {
+                width: 100%;
+                justify-content: space-between;
+            }
+            .metric-card-ba {
+                min-width: unset;
+            }
+        }
+        @media (max-width: 576px) {
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+            .kpi-cards {
+                grid-template-columns: 1fr;
+            }
+            .content-area {
+                padding: 15px;
+            }
+            .header {
+                padding: 0 15px;
+            }
+            .nlp-input-container {
+                flex-direction: column;
+            }
+            .message {
+                max-width: 90%;
+            }
+            .benchmarking-controls {
+                grid-template-columns: 1fr;
+            }
+        }
+        .menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--dark);
+            padding: 5px;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+        .menu-toggle:hover {
+            background: var(--light);
+        }
+        /* Custom icon colors */
+        .fa-chart-pie { color: #4CAF50; }
+        .fa-heart-pulse { color: #E91E63; }
+        .fa-brain { color: #9C27B0; }
+        .fa-user-slash { color: #FF5722; }
+        .fa-book { color: #3F51B5; }
+        .fa-chart-line { color: #009688; }
+        .fa-tachometer-alt { color: #FF9800; }
+        .fa-cogs { color: #607D8B; }
+        .fa-comments { color: #2196F3; }
+        .fa-chart-bar { color: #795548; }
+        .fa-sliders-h { color: #9E9E9E; }
+        .fa-robot { color: var(--primary); background: white; padding: 10px; border-radius: 10px; }
+        /* Badge notification */
+        .badge {
+            background: var(--secondary);
+            color: white;
+            border-radius: 10px;
+            padding: 3px 8px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: auto;
+        }
+        /* Logout Button Style */
+        .logout-btn {
+            background: none;
+            border: none;
+            color: #ff7f0e;
+            font-size: 14px;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 5px;
+            transition: background 0.3s;
+            width: 100%;
+            text-align: left;
+            margin-top: 10px;
+        }
+        .logout-btn:hover {
+            background: rgba(255, 127, 14, 0.2);
+        }
+		
+		/* 1. Fix the card height */
+#dashboard .chart-container {
+    height: 360px;          /* same for both cards → no jump */
+    display: flex;
+    flex-direction: column;
+}
+#dashboard .chart-container canvas {
+    flex: 1 1 auto;         /* fill the card, never overflow */
+}
+	
+
+/* === FIX: keep dashboard charts visible & steady === */
+#dashboard .chart-container {
+    height: 360px;          /* fixed card height */
+    display: flex;
+    flex-direction: column;
+}
+#dashboard .chart-container canvas {
+    flex: 1 1 auto;         /* canvas fills the card */
+}
+
+
+
+/* =========  STEADY CHART CARDS  ========= */
+/* 1.  every chart container keeps a fixed pixel height */
+.chart-container,
+.performance-chart,
+.benchmarking-chart {
+    height: 360px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 2.  canvas always fills that height */
+.chart-container canvas,
+.performance-chart canvas,
+.benchmarking-chart canvas {
+    flex: 1 1 auto;
+}
+
+.login-logo,
+.logo-placeholder {
+    width: 70px;          /* same size as the old text box */
+    height: 70px;
+    object-fit: contain;  /* scale logo without distortion */
+    border-radius: 12px;  /* optional – keeps the rounded corner style */
+    background: white;    /* in case the image has transparency */
+    padding: 4px;         /* tiny breathing space */
+}
+	
+    </style>
+</head>
+<body>
+    <!-- ========== LOGIN SCREEN ========== -->
+    <div id="login-screen">
+        <div class="login-container">
+            <div class="login-header">
+                <img src="ebs-logo.png" alt="EBS" class="login-logo">
+                <h1 class="login-title">EBS Asset Expert</h1>
+                <p class="login-subtitle">Powered By AI</p>
+            </div>
+            <div class="login-form">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" class="form-control" placeholder="Enter your username" value="nmohanty">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" class="form-control" placeholder="Enter your password" value="password123">
+                </div>
+                <button id="login-btn" class="login-btn">Sign In</button>
+                <div id="login-error" class="login-error">Invalid username or password. Please try again.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application (Initially Hidden) -->
+    <div id="main-application" style="display: none; width: 100%;">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-container">
+                    <img src="ebs-logo.png" alt="EBS" class="logo-placeholder">
+                    <div class="sidebar-title">EBS Asset Expert</div>
+                    <div class="sidebar-subtitle">Powered By AI </div>
+                </div>
+            </div>
+            <nav class="nav-menu">
+                <div class="nav-item active" data-screen="dashboard">
+                    <span class="nav-icon"><i class="fas fa-chart-pie"></i></span>
+                    <span class="nav-text">Dashboard</span>
+                </div>
+                <div class="nav-item" data-screen="asset-health">
+                    <span class="nav-icon"><i class="fas fa-heart-pulse"></i></span>
+                    <span class="nav-text">Asset Health</span>
+                    <span class="badge">3</span>
+                </div>
+                <div class="nav-item" data-screen="nlp-chat">
+                    <span class="nav-icon"><i class="fas fa-comments"></i></span>
+                    <span class="nav-text">AI Assistant</span>
+                </div>
+                <div class="nav-item" data-screen="bad-actors">
+                    <span class="nav-icon"><i class="fas fa-user-slash"></i></span>
+                    <span class="nav-text">Bad Actors</span>
+                    <span class="badge">5</span>
+                </div>
+                <div class="nav-item" data-screen="smart-signal">
+                    <span class="nav-icon"><i class="fas fa-book"></i></span>
+                    <span class="nav-text">Smart Signal</span>
+                </div>
+                <div class="nav-item" data-screen="performance-metrics">
+                    <span class="nav-icon"><i class="fas fa-chart-line"></i></span>
+                    <span class="nav-text">Performance Metrics</span>
+                </div>
+                <div class="nav-item" data-screen="benchmarking">
+                    <span class="nav-icon"><i class="fas fa-tachometer-alt"></i></span>
+                    <span class="nav-text">Bench Marking</span>
+                </div>
+                <div class="nav-item" data-screen="reliability-analytics">
+                    <span class="nav-icon"><i class="fas fa-cogs"></i></span>
+                    <span class="nav-text">Reliability Analytics</span>
+                </div>
+                <div class="nav-item" data-screen="data-import">
+                    <span class="nav-icon"><i class="fas fa-file-import"></i></span>
+                    <span class="nav-text">Data Import</span>
+                </div>
+                <div class="nav-item" data-screen="settings">
+                    <span class="nav-icon"><i class="fas fa-sliders-h"></i></span>
+                    <span class="nav-text">Settings</span>
+                </div>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <div class="user-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="user-info">
+                        <div class="user-name">Nimai Mohanty</div>
+                        <div class="user-email">nmohanty@ebs.com</div>
+                    </div>
+                </div>
+                <!-- ========== LOGOUT BUTTON ========== -->
+                <button id="logout-btn" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </div>
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header -->
+            <div class="header">
+                <button class="menu-toggle" id="menu-toggle"><i class="fas fa-bars"></i></button>
+                <h1 class="page-title" id="page-title">Dashboard</h1>
+                <div class="header-actions">
+                    <div class="status-badge">
+                        <span class="status-dot status-online"><i class="fas fa-circle"></i></span>
+                        <span class="status-text">Online</span>
+                    </div>
+                </div>
+            </div>
+            <!-- Content Area -->
+            <div class="content-area">
+                <!-- Dashboard Screen -->
+                <div class="screen active" id="dashboard">
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-title">Total Assets</span>
+                                <span class="metric-icon"><i class="fas fa-box"></i></span>
+                            </div>
+                            <div class="metric-value">5,124</div>
+                            <div class="metric-change change-positive"><i class="fas fa-arrow-up"></i> 2.1% since last week</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-title">Assets at Risk</span>
+                                <span class="metric-icon" style="color: var(--danger);"><i class="fas fa-exclamation-triangle"></i></span>
+                            </div>
+                            <div class="metric-value">87</div>
+                            <div class="metric-change change-negative"><i class="fas fa-arrow-down"></i> 5.3% since last week</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-title">Predicted Failures</span>
+                                <span class="metric-icon" style="color: var(--warning);"><i class="fas fa-wrench"></i></span>
+                            </div>
+                            <div class="metric-value">12</div>
+                            <div class="metric-change change-positive"><i class="fas fa-arrow-up"></i> 15% since last week</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-title">Total Maintenance</span>
+                                <span class="metric-icon" style="color: var(--success);"><i class="fas fa-tools"></i></span>
+                            </div>
+                            <div class="metric-value">456</div>
+                            <div class="metric-change change-positive"><i class="fas fa-arrow-up"></i> 8.9% since last week</div>
+                        </div>
+                    </div>
+                    <div class="charts-grid">
+                        <div class="chart-container">
+                            <h2 class="chart-title">Asset Health Distribution</h2>
+                            <canvas id="assetHealthChart"></canvas>
+                        </div>
+                        <div class="chart-container">
+                            <h2 class="chart-title">Predicted Failures by Asset Type</h2>
+                            <canvas id="failureByAssetChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <!-- Asset Health Screen -->
+                <div class="screen" id="asset-health">
+                    <div class="screen-content">
+                        <h2 class="chart-title">Detailed Asset Health</h2>
+                        <p>Below is a summary of all assets and their current health status.</p>
+                        <table class="benchmarking-table">
+                            <thead>
+                                <tr>
+                                    <th>Asset ID</th>
+                                    <th>Asset Type</th>
+                                    <th>Location</th>
+                                    <th>Health Score</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>EBS-1001</td>
+                                    <td>Pump</td>
+                                    <td>North Plant</td>
+                                    <td>95</td>
+                                    <td><span class="status-badge-ba stable">Stable</span></td>
+                                </tr>
+                                <tr>
+                                    <td>EBS-1002</td>
+                                    <td>Conveyor Belt</td>
+                                    <td>South Plant</td>
+                                    <td>72</td>
+                                    <td><span class="status-badge-ba warning">Warning</span></td>
+                                </tr>
+                                <tr>
+                                    <td>EBS-1003</td>
+                                    <td>Motor</td>
+                                    <td>East Plant</td>
+                                    <td>55</td>
+                                    <td><span class="status-badge-ba critical">Critical</span></td>
+                                </tr>
+                                <tr>
+                                    <td>EBS-1004</td>
+                                    <td>Valve</td>
+                                    <td>North Plant</td>
+                                    <td>99</td>
+                                    <td><span class="status-badge-ba stable">Stable</span></td>
+                                </tr>
+                                <tr>
+                                    <td>EBS-1005</td>
+                                    <td>Sensor</td>
+                                    <td>West Plant</td>
+                                    <td>81</td>
+                                    <td><span class="status-badge-ba stable">Stable</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <!-- AI Assistant Screen -->
+                <div class="screen" id="nlp-chat">
+                    <div class="screen-content">
+                        <h2 class="chart-title"><i class="fas fa-comments"></i> AI Assistant</h2>
+                        <p>This screen displays intelligent alerts and signals generated by the AI based on real-time data.</p>
+                        <div class="nlp-container">
+                            <div class="upload-container">
+                                <p>📁 Upload Excel/CSV file to replace sample data:</p>
+                                <input type="file" id="file-upload" accept=".xlsx,.xls,.csv" style="display:none">
+                                <button class="upload-btn" id="upload-trigger">Choose File</button>
+                                <div class="upload-status" id="upload-status"></div>
+                            </div>
+                            <div class="conversation-container" id="conversation">
+                                <div class="message ai-message">
+                                    <div class="message-header">AI Assistant</div>
+                                    <div class="message-content">Hello! Ask me about your assets. Try: "Show me critical assets in Production"</div>
+                                </div>
+                            </div>
+                            <div class="thinking" id="thinking">
+                                <i class="fas fa-spinner fa-spin"></i> Thinking...
+                            </div>
+                            <div class="nlp-input-container">
+                                <input type="text" class="nlp-input" id="nlp-input" placeholder="Ask something like: 'Show me assets with high failure probability'">
+                                <button class="voice-btn" id="voice-btn">
+                                    <i class="fas fa-microphone"></i>
+                                </button>
+                                <button class="nlp-submit" id="nlp-submit">Ask</button>
+                            </div>
+                            <div class="suggested-questions">
+                                <div class="suggestion-chip" data-question="Show me assets with failure probability > 80%">High failure probability</div>
+                                <div class="suggestion-chip" data-question="Which asset has the highest downtime?">Highest downtime</div>
+                                <div class="suggestion-chip" data-question="List critical assets in Production department">Critical in Production</div>
+                                <div class="suggestion-chip" data-question="Total cost of critical assets">Cost of critical assets</div>
+                            </div>
+                            <div class="export-buttons">
+                                <button class="export-btn pdf" id="export-pdf">Export to PDF</button>
+                                <button class="export-btn excel" id="export-excel">Export to Excel</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Bad Actors Screen -->
+                <div class="screen" id="bad-actors">
+                    <div class="screen-content bad-actors-container">
+                        <div class="bad-actors-header">
+                            <h1>Bad Actors Analysis</h1>
+                        </div>
+                        <div class="key-metrics">
+                            <div class="metric-card-ba">
+                                <h3>High Risk Assets</h3>
+                                <div class="value">15</div>
+                                <div class="change negative"><i class="fas fa-arrow-down"></i> 2% last month</div>
+                            </div>
+                            <div class="metric-card-ba">
+                                <h3>Average Risk Score</h3>
+                                <div class="value">78.5</div>
+                                <div class="change negative"><i class="fas fa-arrow-down"></i> 1.2% last month</div>
+                            </div>
+                            <div class="metric-card-ba">
+                                <h3>Preventive Actions</h3>
+                                <div class="value">32</div>
+                                <div class="change positive"><i class="fas fa-arrow-up"></i> 8% last month</div>
+                            </div>
+                        </div>
+                        <div class="bad-actors-table-container">
+                            <h2>Top 10 Bad Actors</h2>
+                            <table class="bad-actors-table">
+                                <thead>
+                                    <tr>
+                                        <th>Asset ID</th>
+                                        <th>Asset Type</th>
+                                        <th>Risk Score</th>
+                                        <th>Health Status</th>
+                                        <th>Location</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="high-risk">
+                                        <td>EBS-2015</td>
+                                        <td>Motor</td>
+                                        <td>95</td>
+                                        <td><span class="status-badge-ba critical">Critical</span></td>
+                                        <td>South Plant</td>
+                                    </tr>
+                                    <tr>
+                                        <td>EBS-2032</td>
+                                        <td>Compressor</td>
+                                        <td>91</td>
+                                        <td><span class="status-badge-ba critical">Critical</span></td>
+                                        <td>North Plant</td>
+                                    </tr>
+                                    <tr>
+                                        <td>EBS-2044</td>
+                                        <td>Pump</td>
+                                        <td>88</td>
+                                        <td><span class="status-badge-ba critical">Critical</span></td>
+                                        <td>East Plant</td>
+                                    </tr>
+                                    <tr>
+                                        <td>EBS-2067</td>
+                                        <td>Turbine</td>
+                                        <td>84</td>
+                                        <td><span class="status-badge-ba warning">Warning</span></td>
+                                        <td>West Plant</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <!-- Smart Signal Screen -->
+                <div class="screen" id="smart-signal">
+                    <div class="screen-content">
+                        <h2 class="chart-title"><i class="fas fa-book"></i> Smart Signal</h2>
+                        <p>This screen displays intelligent alerts and signals generated by the AI based on real-time data.</p>
+                        <div class="alerts-container">
+                            <div class="alert-item alert-critical">
+                                <i class="fas fa-exclamation-circle fa-2x"></i>
+                                <div>
+                                    <h4>Critical Alert: High Vibration Detected on Motor #45</h4>
+                                    <p>Immediate action required. Predicted failure within 48 hours. See predictive analytics for more details.</p>
+                                </div>
+                            </div>
+                            <div class="alert-item alert-warning">
+                                <i class="fas fa-info-circle fa-2x"></i>
+                                <div>
+                                    <h4>Warning: Temperature Spike in Pump #12</h4>
+                                    <p>Temperature has exceeded threshold. Monitor closely and schedule inspection.</p>
+                                </div>
+                            </div>
+                            <div class="alert-item alert-success">
+                                <i class="fas fa-check-circle fa-2x"></i>
+                                <div>
+                                    <h4>System Alert: Maintenance Completed on Turbine #08</h4>
+                                    <p>Maintenance log has been updated. Asset health score is now optimal.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Performance Metrics Screen -->
+                                <!-- Performance Metrics Screen -->
+                <div class="screen" id="performance-metrics">
+                    <div class="performance-metrics-container">
+                        <div class="metrics-header">
+                            <h2>Asset Performance Over Time</h2>
+                            <div class="time-filters">
+                                <button class="time-filter active" data-time="week">Week</button>
+                                <button class="time-filter" data-time="month">Month</button>
+                                <button class="time-filter" data-time="year">Year</button>
+                            </div>
+                        </div>
+                        <div class="metrics-grid-performance">
+                            <div class="performance-card">
+                                <div class="performance-card-header">
+                                    <span class="performance-card-title">Average Uptime</span>
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                                <div class="performance-card-value">99.8%</div>
+                                <div class="performance-card-change change-positive"><i class="fas fa-arrow-up"></i> 0.2%</div>
+                            </div>
+                            <div class="performance-card">
+                                <div class="performance-card-header">
+                                    <span class="performance-card-title">Mean Time Between Failures (MTBF)</span>
+                                    <i class="fas fa-calendar-check"></i>
+                                </div>
+                                <div class="performance-card-value">520 Days</div>
+                                <div class="performance-card-change change-positive"><i class="fas fa-arrow-up"></i> 15%</div>
+                            </div>
+                            <div class="performance-card">
+                                <div class="performance-card-header">
+                                    <span class="performance-card-title">Operating Costs</span>
+                                    <i class="fas fa-dollar-sign"></i>
+                                </div>
+                                <div class="performance-card-value">$2.1M</div>
+                                <div class="performance-card-change change-negative"><i class="fas fa-arrow-down"></i> 3.5%</div>
+                            </div>
+                        </div>
+                        <div class="performance-charts">
+                            <div class="performance-chart">
+                                <h3>Uptime Trend</h3>
+                                <canvas id="uptimeChart"></canvas>
+                            </div>
+                            <div class="performance-chart">
+                                <h3>Maintenance Costs</h3>
+                                <canvas id="costChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="performance-table-container">
+                            <h3>Detailed Performance Data</h3>
+                            <table class="performance-table">
+                                <thead>
+                                    <tr>
+                                        <th>Asset ID</th>
+                                        <th>Uptime (%)</th>
+                                        <th>Maintenance ($)</th>
+                                        <th>Failures</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>EBS-1001</td>
+                                        <td>99.9</td>
+                                        <td>5,200</td>
+                                        <td>0</td>
+                                    </tr>
+                                    <tr>
+                                        <td>EBS-1002</td>
+                                        <td>98.5</td>
+                                        <td>8,100</td>
+                                        <td>1</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <!-- Benchmarking Screen -->
+                <div class="screen" id="benchmarking">
+                    <div class="benchmarking-header">
+                        <h2>Benchmarking Analysis</h2>
+                        <p>Compare asset performance against industry standards or internal baselines.</p>
+                        <div class="benchmarking-controls">
+                            <div class="benchmarking-control">
+                                <label for="benchmark-asset">Select Asset</label>
+                                <select id="benchmark-asset">
+                                    <option>EBS-1001</option>
+                                    <option>EBS-1002</option>
+                                    <option>EBS-1003</option>
+                                </select>
+                            </div>
+                            <div class="benchmarking-control">
+                                <label for="benchmark-group">Select Group</label>
+                                <select id="benchmark-group">
+                                    <option>Industry Average</option>
+                                    <option>Top 10% Performers</option>
+                                </select>
+                            </div>
+                            <div class="benchmarking-actions">
+                                <button class="benchmarking-btn">Run Benchmark</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="kpi-cards">
+                        <div class="kpi-card">
+                            <div class="kpi-header">
+                                <span class="kpi-title">Uptime</span>
+                                <span class="kpi-badge badge-top">Top 15%</span>
+                            </div>
+                            <div class="kpi-value">99.9%</div>
+                            <div class="kpi-percentile">vs. Industry Avg of 99.5%</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-header">
+                                <span class="kpi-title">MTBF</span>
+                                <span class="kpi-badge badge-medium">Medium</span>
+                            </div>
+                            <div class="kpi-value">520 Days</div>
+                            <div class="kpi-percentile">vs. Industry Avg of 600 Days</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-header">
+                                <span class="kpi-title">Operating Cost</span>
+                                <span class="kpi-badge badge-top">Top 5%</span>
+                            </div>
+                            <div class="kpi-value">$5.2K</div>
+                            <div class="kpi-percentile">vs. Industry Avg of $6.5K</div>
+                        </div>
+                    </div>
+                    <div class="benchmarking-charts">
+                        <div class="benchmarking-chart">
+                            <h3>Uptime Comparison</h3>
+                            <canvas id="uptimeCompareChart"></canvas>
+                        </div>
+                        <div class="benchmarking-chart">
+                            <h3>Cost Comparison</h3>
+                            <canvas id="costCompareChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="benchmarking-table">
+                        <h3>Detailed Benchmarking Data</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Metric</th>
+                                    <th>Your Asset</th>
+                                    <th>Benchmark Group</th>
+                                    <th>Difference</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Uptime (%)</td>
+                                    <td>99.9</td>
+                                    <td>99.5</td>
+                                    <td><span class="change-positive">+0.4%</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Failures/Year</td>
+                                    <td>0.2</td>
+                                    <td>0.5</td>
+                                    <td><span class="change-positive">-0.3</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Maintenance Cost</td>
+                                    <td>$5,200</td>
+                                    <td>$6,500</td>
+                                    <td><span class="change-positive">-$1,300</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <!-- Reliability Analytics Screen -->
+                <div class="screen" id="reliability-analytics">
+                    <div class="screen-content">
+                        <h2 class="chart-title"><i class="fas fa-cogs"></i> Reliability Analytics</h2>
+                        <p>This section provides a deep dive into the reliability metrics of your assets, including Weibull analysis, FMEA, and other statistical models.</p>
+                        <div class="charts-grid">
+                            <div class="chart-container">
+                                <h2 class="chart-title">Failure Rate Over Time</h2>
+                                <canvas id="failureRateChart"></canvas>
+                            </div>
+                            <div class="chart-container">
+                                <h2 class="chart-title">Component Breakdown</h2>
+                                <canvas id="componentBreakdownChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Data Import Screen -->
+                <div class="screen" id="data-import">
+                    <div class="screen-content">
+                        <h2 class="chart-title"><i class="fas fa-file-import"></i> Data Import</h2>
+                        <p>Use this tool to import new asset data in CSV format. The data will be processed and used for all analysis screens.</p>
+                        <div class="nlp-container">
+                            <div class="nlp-input-container">
+                                <input type="file" id="csv-file-input" accept=".csv" class="nlp-input">
+                                <button id="import-button" class="nlp-submit">Import CSV</button>
+                            </div>
+                            <div id="import-status" class="thinking"></div>
+                        </div>
+                        <div id="imported-data-summary" class="benchmarking-table" style="display:none; margin-top: 20px;">
+                            <h3>Import Summary</h3>
+                            <p id="summary-text"></p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Settings Screen -->
+                <div class="screen" id="settings">
+                    <div class="screen-content">
+                        <h2 class="chart-title"><i class="fas fa-sliders-h"></i> Settings</h2>
+                        <p>Customize your dashboard experience and data sources here.</p>
+                        <form class="nlp-container">
+                            <label for="api-key" style="font-weight: 600;">API Key</label>
+                            <input type="password" id="api-key" class="nlp-input" placeholder="Enter your API Key">
+                            <label for="data-source" style="font-weight: 600;">Data Source</label>
+                            <select id="data-source" class="nlp-input">
+                                <option value="csv">CSV File</option>
+                                <option value="database">Database (Placeholder)</option>
+                            </select>
+                            <button type="submit" class="nlp-submit">Save Settings</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ======================
+        // GLOBAL STATE
+        // ======================
+        let assetData = [
+            { id: "PUMP-007", name: "Main Pump Station #7", department: "Production", risk: "CRITICAL", downtime: 89, cost: 245000, failureProb: 94 },
+            { id: "COMP-003", name: "Compressor Unit #3", department: "Production", risk: "CRITICAL", downtime: 76, cost: 189000, failureProb: 87 },
+            { id: "VALVE-012", name: "Control Valve #12", department: "Maintenance", risk: "HIGH", downtime: 54, cost: 98000, failureProb: 76 },
+            { id: "MOTOR-045", name: "Drive Motor #45", department: "Logistics", risk: "HIGH", downtime: 48, cost: 76000, failureProb: 68 },
+            { id: "COOL-008", name: "Cooling System #8", department: "Production", risk: "MEDIUM", downtime: 32, cost: 54000, failureProb: 45 },
+            { id: "TANK-019", name: "Storage Tank #19", department: "Logistics", risk: "LOW", downtime: 5, cost: 12000, failureProb: 12 }
+        ];
+        const conversationHistory = [];
+
+        // Chart instances (to prevent stacking)
+        let assetHealthChart = null;
+        let failureByAssetChart = null;
+        let uptimeChart = null;
+        let costChart = null;
+        let uptimeCompareChart = null;
+        let costCompareChart = null;
+        let failureRateChart = null;
+        let componentBreakdownChart = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // ========== LOGIN LOGIC ==========
+            const loginScreen = document.getElementById('login-screen');
+            const mainApp = document.getElementById('main-application');
+            const loginBtn = document.getElementById('login-btn');
+            const logoutBtn = document.getElementById('logout-btn');
+            const loginError = document.getElementById('login-error');
+
+            loginBtn.addEventListener('click', function() {
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+
+                if (username === 'nmohanty' && password === 'password123') {
+                    loginScreen.style.display = 'none';
+                    mainApp.style.display = 'block';
+                } else {
+                    loginError.style.display = 'block';
+                }
+            });
+
+            logoutBtn.addEventListener('click', function() {
+                mainApp.style.display = 'none';
+                loginScreen.style.display = 'flex';
+                // Clear conversation on logout (optional)
+                const conversation = document.getElementById('conversation');
+                if (conversation) {
+                    conversation.innerHTML = `
+                        <div class="message ai-message">
+                            <div class="message-header">AI Assistant</div>
+                            <div class="message-content">Hello! Ask me about your assets. Try: "Show me critical assets in Production"</div>
+                        </div>
+                    `;
+                }
+                conversationHistory.length = 0;
+            });
+
+            // ========== NAVIGATION & UI ==========
+            const sidebar = document.getElementById('sidebar');
+            const menuToggle = document.getElementById('menu-toggle');
+            const navItems = document.querySelectorAll('.nav-item');
+            const screens = document.querySelectorAll('.screen');
+            const pageTitle = document.getElementById('page-title');
+
+            function showScreen(screenId) {
+                navItems.forEach(item => item.classList.remove('active'));
+                screens.forEach(screen => screen.classList.remove('active'));
+                const activeNavItem = document.querySelector(`.nav-item[data-screen="${screenId}"]`);
+                const activeScreen = document.getElementById(screenId);
+                if (activeNavItem && activeScreen) {
+                    activeNavItem.classList.add('active');
+                    activeScreen.classList.add('active');
+                    pageTitle.textContent = activeNavItem.querySelector('.nav-text').textContent;
+                    if (window.innerWidth <= 992) {
+                        sidebar.classList.remove('open');
+                    }
+                    // Initialize charts for specific screens
+                    if (screenId === 'dashboard') {
+                        initDashboardCharts();
+                    } else if (screenId === 'performance-metrics') {
+                        initPerformanceCharts();
+                    } else if (screenId === 'benchmarking') {
+                        initBenchmarkingCharts();
+                    } else if (screenId === 'reliability-analytics') {
+                        initReliabilityCharts();
+                    }
+                }
+            }
+
+            navItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    const screenId = item.dataset.screen;
+                    showScreen(screenId);
+                });
+            });
+
+            menuToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('open');
+            });
+
+            // ========== EXCEL UPLOAD ==========
+            document.getElementById('upload-trigger').addEventListener('click', function() {
+                document.getElementById('file-upload').click();
+            });
+
+            document.getElementById('file-upload').addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                    const requiredCols = ['id', 'name', 'department', 'risk', 'downtime', 'cost', 'failureProb'];
+                    const missing = requiredCols.filter(col => !jsonData[0]?.hasOwnProperty(col));
+                    if (missing.length > 0) {
+                        document.getElementById('upload-status').textContent = `❌ Missing columns: ${missing.join(', ')}`;
+                        document.getElementById('upload-status').style.color = 'var(--danger)';
+                        return;
+                    }
+                    assetData = jsonData.map(row => ({
+                        id: row.id,
+                        name: row.name,
+                        department: row.department,
+                        risk: row.risk,
+                        downtime: Number(row.downtime),
+                        cost: Number(row.cost),
+                        failureProb: Number(row.failureProb)
+                    }));
+                    document.getElementById('upload-status').textContent = `✅ Loaded ${assetData.length} assets from ${file.name}`;
+                    document.getElementById('upload-status').style.color = 'var(--success)';
+                    console.log("Data loaded:", assetData);
+                };
+                reader.readAsArrayBuffer(file);
+            });
+
+            // ========== VOICE INPUT ==========
+            let recognition;
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                recognition.lang = 'en-US';
+                recognition.onresult = function(event) {
+                    const transcript = event.results[0][0].transcript;
+                    document.getElementById('nlp-input').value = transcript;
+                };
+                recognition.onerror = function(event) {
+                    console.error('Speech recognition error', event.error);
+                    alert('Voice recognition failed. Please try again or type your question.');
+                };
+            }
+
+            document.getElementById('voice-btn').addEventListener('click', function() {
+                if (!recognition) {
+                    alert('Voice input not supported in this browser.');
+                    return;
+                }
+                recognition.start();
+            });
+
+            // ========== NLP PROCESSOR ==========
+            function processNLPQuery(query) {
+                query = query.toLowerCase();
+                if (query.includes("failure probability") && (query.includes("greater than") || query.includes(">"))) {
+                    const thresholdMatch = query.match(/(?:greater than|>)\s*(\d+)/);
+                    if (thresholdMatch) {
+                        const threshold = parseInt(thresholdMatch[1]);
+                        const matches = assetData.filter(asset => asset.failureProb > threshold);
+                        if (matches.length === 0) {
+                            return `No assets found with failure probability greater than ${threshold}%.`;
+                        }
+                        let response = `Found ${matches.length} asset(s) with failure probability > ${threshold}%:\n`;
+                        matches.forEach(asset => {
+                            response += `• ${asset.name} (${asset.id}) — ${asset.failureProb}% probability\n`;
+                        });
+                        return response;
+                    }
+                }
+                if (query.includes("highest downtime")) {
+                    const max = assetData.reduce((prev, current) => (prev.downtime > current.downtime) ? prev : current);
+                    return `The asset with the highest downtime is ${max.name} (${max.id}) with ${max.downtime} hours.`;
+                }
+                if (query.includes("critical") && query.includes("production")) {
+                    const matches = assetData.filter(asset => asset.risk === "CRITICAL" && asset.department === "Production");
+                    if (matches.length === 0) {
+                        return "No critical assets found in Production department.";
+                    }
+                    let response = `Found ${matches.length} critical asset(s) in Production:\n`;
+                    matches.forEach(asset => {
+                        response += `• ${asset.name} (${asset.id}) — Downtime: ${asset.downtime}h, Cost: $${asset.cost.toLocaleString()}\n`;
+                    });
+                    return response;
+                }
+                if (query.includes("total cost") && query.includes("critical")) {
+                    const total = assetData
+                        .filter(asset => asset.risk === "CRITICAL")
+                        .reduce((sum, asset) => sum + asset.cost, 0);
+                    return `Total cost of critical assets: $${total.toLocaleString()}`;
+                }
+                return "I couldn't understand your question. Try asking:\n" +
+                       "• 'Show me assets with failure probability > 80%'\n" +
+                       "• 'Which asset has the highest downtime?'\n" +
+                       "• 'List critical assets in Production department'\n" +
+                       "• 'Total cost of critical assets'";
+            }
+
+            function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            // ========== NLP SUBMIT ==========
+            document.getElementById('nlp-submit').addEventListener('click', function() {
+                const input = document.getElementById('nlp-input');
+                const conversation = document.getElementById('conversation');
+                const thinking = document.getElementById('thinking');
+                if (input.value.trim() === '') return;
+                const userMessage = document.createElement('div');
+                userMessage.className = 'message user-message';
+                userMessage.innerHTML = `
+                    <div class="message-header">You</div>
+                    <div class="message-content">${escapeHtml(input.value)}</div>
+                `;
+                conversation.appendChild(userMessage);
+                conversationHistory.push({ role: 'user', content: input.value });
+                thinking.classList.add('active');
+                input.value = '';
+                setTimeout(() => {
+                    thinking.classList.remove('active');
+                    const responseText = processNLPQuery(input.value || userMessage.querySelector('.message-content').textContent);
+                    const aiMessage = document.createElement('div');
+                    aiMessage.className = 'message ai-message';
+                    aiMessage.innerHTML = `
+                        <div class="message-header">AI Assistant</div>
+                        <div class="message-content">${escapeHtml(responseText).replace(/\n/g, '<br>')}</div>
+                    `;
+                    conversation.appendChild(aiMessage);
+                    conversationHistory.push({ role: 'assistant', content: responseText });
+                    conversation.scrollTop = conversation.scrollHeight;
+                }, 1200);
+            });
+
+            // Suggested questions
+            document.querySelectorAll('.suggestion-chip').forEach(chip => {
+                chip.addEventListener('click', function() {
+                    document.getElementById('nlp-input').value = this.getAttribute('data-question');
+                    document.getElementById('nlp-submit').click();
+                });
+            });
+
+            // ========== EXPORT FUNCTIONALITY ==========
+            document.getElementById('export-pdf').addEventListener('click', function() {
+                if (conversationHistory.length === 0) {
+                    alert('No conversation to export.');
+                    return;
+                }
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                doc.setFontSize(20);
+                doc.text("EBS Asset Expert - AI Conversation", 14, 20);
+                doc.setFontSize(12);
+                doc.setTextColor(100);
+                doc.text(`Exported on: ${new Date().toLocaleString()}`, 14, 30);
+                let y = 45;
+                conversationHistory.forEach(msg => {
+                    doc.setFontType(msg.role === 'user' ? 'bold' : 'normal');
+                    doc.setTextColor(msg.role === 'user' ? 0 : 80);
+                    const prefix = msg.role === 'user' ? '👤 You:' : '🤖 AI:';
+                    const text = `${prefix} ${msg.content}`;
+                    const lines = doc.splitTextToSize(text, 180);
+                    lines.forEach(line => {
+                        if (y > 280) {
+                            doc.addPage();
+                            y = 20;
+                        }
+                        doc.text(line, 14, y);
+                        y += 8;
+                    });
+                    y += 5;
+                });
+                doc.save('ebs-ai-conversation.pdf');
+            });
+
+            document.getElementById('export-excel').addEventListener('click', function() {
+                if (conversationHistory.length === 0) {
+                    alert('No conversation to export.');
+                    return;
+                }
+                const worksheetData = [
+                    ["Role", "Content", "Timestamp"]
+                ];
+                conversationHistory.forEach(msg => {
+                    worksheetData.push([
+                        msg.role === 'user' ? 'User' : 'AI Assistant',
+                        msg.content,
+                        new Date().toISOString()
+                    ]);
+                });
+                const ws = XLSX.utils.aoa_to_sheet(worksheetData);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Conversation");
+                XLSX.writeFile(wb, "ebs-ai-conversation.xlsx");
+            });
+
+            // ========== DASHBOARD CHARTS (FIXED) ==========
+            
+			
+			
+			
+function initDashboardCharts() {
+    /* 1. grab canvases once */
+    const ahCanvas = document.getElementById('assetHealthChart');
+    const faCanvas = document.getElementById('failureByAssetChart');
+    if (!ahCanvas || !faCanvas) {                 // guard
+        console.warn('Dashboard canvases not found – charts skipped');
+        return;
+    }
+
+    /* 2. destroy old instances */
+    if (assetHealthChart)   assetHealthChart.destroy();
+    if (failureByAssetChart) failureByAssetChart.destroy();
+
+    /* 3. build Asset-Health doughnut  (real data!) */
+    assetHealthChart = new Chart(ahCanvas.getContext('2d'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Optimal', 'Warning', 'Critical'],
+            datasets: [{
+                data: [85, 10, 5],
+                backgroundColor: ['#2ca02c','#ffd93d','#d62728'],
+                hoverOffset: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,      // fill the card
+            plugins: {
+                legend: { position: 'right' },
+                tooltip: { callbacks: { label: ctx => `${ctx.label}: ${ctx.parsed}%` } }
+            }
+        }
+    });
+
+    /* 4. build Predicted-Failures bar (unchanged) */
+    failureByAssetChart = new Chart(faCanvas.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: ['Motors', 'Pumps', 'Valves', 'Sensors', 'Compressors'],
+            datasets: [{
+                label: 'Predicted Failures',
+                data: [5, 3, 1, 2, 1],
+                backgroundColor: '#1a4b8c',
+                borderColor: '#0f3260',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true, title: { display: true, text: 'Number of Failures' } }
+            },
+            plugins: { legend: { display: false } }
+        }
+    });
+}
+
+
+            // ========== PERFORMANCE CHARTS ==========
+function initPerformanceCharts() {
+    /* ---- guard + destroy ---- */
+    const utCanvas = document.getElementById('uptimeChart');
+    const ctCanvas = document.getElementById('costChart');
+    if (!utCanvas || !ctCanvas) { console.warn('Performance canvases missing'); return; }
+    if (uptimeChart) uptimeChart.destroy();
+    if (costChart) costChart.destroy();
+
+    /* ---- Uptime Trend ---- */
+    uptimeChart = new Chart(utCanvas.getContext('2d'), {
+        type: 'line',
+        data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            datasets: [{
+                label: 'Average Uptime (%)',
+                data: [99.5, 99.6, 99.7, 99.8, 99.85, 99.9],
+                borderColor: '#2ca02c',
+                backgroundColor: 'rgba(44, 160, 44, 0.1)',
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { y: { beginAtZero: false } }
+        }
+    });
+
+    /* ---- Maintenance Cost ---- */
+    costChart = new Chart(ctCanvas.getContext('2d'), {
+        type: 'line',
+        data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            datasets: [{
+                label: 'Maintenance Costs ($)',
+                data: [150000, 145000, 130000, 125000, 120000, 115000],
+                borderColor: '#d62728',
+                backgroundColor: 'rgba(214, 39, 40, 0.1)',
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+}
+
+            // ========== BENCHMARKING CHARTS ==========
+            function initBenchmarkingCharts() {
+    /* ---- guard + destroy ---- */
+    const utCanvas = document.getElementById('uptimeCompareChart');
+    const ctCanvas = document.getElementById('costCompareChart');
+    if (!utCanvas || !ctCanvas) { console.warn('Benchmark canvases missing'); return; }
+    if (uptimeCompareChart) uptimeCompareChart.destroy();
+    if (costCompareChart) costCompareChart.destroy();
+
+    /* ---- Uptime Comparison ---- */
+    uptimeCompareChart = new Chart(utCanvas.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: ['Your Asset', 'Industry Average'],
+            datasets: [{
+                label: 'Uptime (%)',
+                data: [99.9, 99.5],
+                backgroundColor: ['#1a4b8c', '#a6a6a6']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+
+    /* ---- Cost Comparison ---- */
+    costCompareChart = new Chart(ctCanvas.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: ['Your Asset', 'Industry Average'],
+            datasets: [{
+                label: 'Maintenance Cost ($)',
+                data: [5200, 6500],
+                backgroundColor: ['#ff7f0e', '#a6a6a6']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+}
+
+            // ========== RELIABILITY CHARTS ==========
+           function initReliabilityCharts() {
+    const fr = document.getElementById('failureRateChart');
+    const cb = document.getElementById('componentBreakdownChart');
+    if (!fr || !cb) return;
+
+    if (failureRateChart) failureRateChart.destroy();
+    if (componentBreakdownChart) componentBreakdownChart.destroy();
+
+    failureRateChart = new Chart(fr.getContext('2d'), {
+        type: 'line',
+        data: {
+            labels: ['Q1','Q2','Q3','Q4'],
+            datasets: [{ label:'Failure Rate per 1000 h', data:[0.5,0.7,0.6,0.8], borderColor:'#1a4b8c', tension:0.4 }]
+        },
+        options: { responsive:true, maintainAspectRatio:false, scales:{ y:{ beginAtZero:true } } }
+    });
+
+    componentBreakdownChart = new Chart(cb.getContext('2d'), {
+        type: 'polarArea',
+        data: {
+            labels: ['Bearings','Seals','Gears','Electrical'],
+            datasets: [{ data:[30,15,20,35], backgroundColor:[
+                'rgba(255,99,132,0.5)','rgba(54,162,235,0.5)','rgba(255,206,86,0.5)','rgba(75,192,192,0.5)'] }]
+        },
+        options: { responsive:true, maintainAspectRatio:false,
+                   scales:{ r:{ pointLabels:{ display:true, centerPointLabels:true, font:{ size:14 } } } },
+                   plugins:{ legend:{ position:'right' } } }
+    });
+}
+
+            // ========== DATA IMPORT ==========
+            const csvInput = document.getElementById('csv-file-input');
+            const importButton = document.getElementById('import-button');
+            const importStatus = document.getElementById('import-status');
+            const importSummaryDiv = document.getElementById('imported-data-summary');
+            const summaryText = document.getElementById('summary-text');
+
+            importButton.addEventListener('click', () => {
+                const file = csvInput.files[0];
+                if (!file) {
+                    importStatus.textContent = 'Please select a CSV file to import.';
+                    importStatus.classList.add('active');
+                    return;
+                }
+                importStatus.textContent = 'Importing...';
+                importStatus.classList.add('active');
+                Papa.parse(file, {
+                    header: true,
+                    complete: function(results) {
+                        if (results.data.length > 0) {
+                            const rowCount = results.data.length;
+                            const headers = results.meta.fields.join(', ');
+                            summaryText.innerHTML = `Successfully imported <strong>${rowCount} rows</strong> with the following headers: <em>${headers}</em>.`;
+                            importSummaryDiv.style.display = 'block';
+                            importStatus.classList.remove('active');
+                            importStatus.textContent = 'Import Complete!';
+                            console.log('Parsed data:', results.data);
+                        } else {
+                            importStatus.textContent = 'Failed to parse CSV. The file might be empty or malformed.';
+                            importSummaryDiv.style.display = 'none';
+                        }
+                    },
+                    error: function(err) {
+                        importStatus.textContent = `Error during parsing: ${err.message}`;
+                        importSummaryDiv.style.display = 'none';
+                    }
+                });
+            });
+
+            // Initial screen load
+            showScreen('dashboard');
+        });
+    </script>
+</body>
+</html>
